@@ -1,5 +1,6 @@
 import os
 import cv2
+import shutil
 from simple_image_download import simple_image_download as SID
 
 def howSimilar(file_name, target_name, src_name=None, main_directory= 'database/'):
@@ -69,6 +70,7 @@ def moreSimilar(file_name, clst_name, main_directory= "database/"):
     cluster_path = os.path.join(data_path, 'clusters')
 
     titles = []
+    pathes = []
     all_similarities = []
     for subdirectory in os.scandir(cluster_path):
         if(subdirectory.is_dir()):
@@ -76,17 +78,20 @@ def moreSimilar(file_name, clst_name, main_directory= "database/"):
             for file in os.listdir(cluster):
                 target = os.path.join(cluster,file)
                 titles.append(file)
+                pathes.append(os.path.abspath(cluster))
                 all_similarities.append(howSimilar(file_name, target,src_name= clst_name))
     
+
     closest = max(all_similarities)
-    title = []
     count = 0
     for index in all_similarities:
         if(index == closest):
-            title.append(titles[count])
-        count += 1
+            title = titles[count]
+            pathr = pathes[count]
+        else:
+            count += 1
     
-    return closest, title
+    return closest, title, pathr
 
 def main(main_directory='database/',source= 'srcs'):
     print("Insira um termo para ser usado para buscar imagens no Google.")
@@ -101,8 +106,12 @@ def main(main_directory='database/',source= 'srcs'):
     data_path = os.path.join(data_path,main_directory,term)
     path = os.path.join(data_path,source)
     for file in os.listdir(path):
-        a,b = moreSimilar(file, "Google")
-        print(file + "e mais parecido com a imagem", *b,"database, possuem uma semelhança de", a, "%")
+        semelhança,nome,dest = moreSimilar(file, "Google")
+        orig = os.path.join(path,file)
+        dest = os.path.join(dest,file)
+        shutil.copyfile(orig,dest)
+
+        
 
 if __name__== "__main__" :  
   main()

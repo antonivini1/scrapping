@@ -7,8 +7,6 @@ def howSimilar(file_name, target_name, src_name=None, main_directory= 'database/
         data_path = os.path.join(main_directory,src_name)
         path = os.path.join(data_path,"srcs")
 
-    print(target_name)
-
     if(os.path.isfile(os.path.join(main_directory, file_name))):
         file = os.path.join(main_directory, file_name)
     elif(os.path.isfile(file_name)):
@@ -86,6 +84,7 @@ def moreSimilar(file_name, clst_name, main_directory= "database/"):
     cluster_path = os.path.join(data_path, 'clusters')
 
     titles = []
+    pathes = []
     all_similarities = []
     for subdirectory in os.scandir(cluster_path):
         if(subdirectory.is_dir()):
@@ -93,15 +92,19 @@ def moreSimilar(file_name, clst_name, main_directory= "database/"):
             for file in os.listdir(cluster):
                 target = os.path.join(cluster,file)
                 titles.append(file)
+                pathes.append(os.path.abspath(cluster))
                 all_similarities.append(howSimilar(file_name, target,src_name= clst_name))
     
-    print(titles)
+    
     closest = max(all_similarities)
-    title = []
     count = 0
     for index in all_similarities:
         if(index == closest):
-            title.append(titles[count])
-        count += 1
+            title = titles[count]
+            pathr = pathes[count]
+        else:
+            count += 1
     
-    return closest, title
+    return closest, title, pathr
+
+moreSimilar("Google_10.jpeg", "Google")
