@@ -19,12 +19,13 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 # for web scrapping
 from tqdm import tqdm
-from time import sleep
+from time import perf_counter, sleep
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from simple_image_download import simple_image_download as sid
 # for comparision
 from sewar import vifp, uqi
+
 
 def extract_features(file, model):
     # load the image as a 224x224 array
@@ -165,23 +166,23 @@ def howSimilar(file_name, target_name):
         number_keypoints = len(kp_2)
     percentage_similarity = len(good_points) / number_keypoints * 100
     return percentage_similarity
-def moreSimilar(file_name, clst_name, save= 'clusters'):
+def moreSimilar(file_name, clst_name):
     data_path = os.getcwd()
-    img_path = os.path.join(data_path, clst_name,file_name)
-    cluster_path = os.path.join(data_path, clst_name, save)
+    img_path = os.path.join(data_path, file_name)
+
 
     titles = []
     pathes = []
     all_similarities = []
-    for subdirectory in os.scandir(cluster_path):
-        if(subdirectory.is_dir()):
-            cluster = subdirectory.path
-            for file in os.listdir(cluster):
-                target = os.path.join(cluster,file)
-                titles.append(file)
-                pathes.append(os.path.abspath(cluster))
-                all_similarities.append(howSimilar(img_path, target))
-    
+    for sub in os.scandir(clst_name):
+        if(sub.is_dir()):
+            for file in os.listdir(sub.path):
+                img2comp = os.path.join(sub.path, file)
+                if(os.path.isfile(img2comp)):
+                    if(file.endswith('.jpeg') or file.endswith('.jpg') or file.endswith('.png')):
+                        titles.append(file)
+                        pathes.append(sub.path)
+                        all_similarities.append(howSimilar(img_path, img2comp))
     
     closest = max(all_similarities)
     count = 0
@@ -193,18 +194,22 @@ def moreSimilar(file_name, clst_name, save= 'clusters'):
             count += 1
     
     return closest, title, pathr
-def mov_files(path):
+def mov_files(path,target):
     for file in os.listdir(path):
-        extension = None
-        if(os.path.isfile(os.path.join(path,file))):
-            if(file.endswith('.jpeg') or file.endswith('.jpg') or file.endswith('.png')):
+        file_path = os.path.join(path,file)
+        if(os.path.isfile(file_path)):
+            extension = file.endswith('.jpeg') or file.endswith('.jpg') or file.endswith('.png')
+            if(extension):
+                semelhança,nome,dest = moreSimilar(file_path, target)
+                target_path = os.path.join(dest, file)
+                shutil.copyfile(file_path,target_path)
+                index = len([name for name in os.listdir(dest) if (os.path.isfile(os.path.join(dest,name)) and extension)])
                 extension = os.path.splitext(file)
-                semelhança,nome,target_path = moreSimilar(file, path)
-                print(target_path, os.path.join(path,file))
-                orig = os.path.join(path,file)
-                dest = os.path.join(target_path,file)
-                shutil.copyfile(orig,dest)
-                rename(target_path,dest,extension[1])
+                new_name = rename(dest, index, extension[1])
+                os.rename(target_path,new_name)
+    
+
+
 
 def insert_url():
     print("\nInsira um URL:")
@@ -263,14 +268,14 @@ def download(url, pathname):
     else:
         return
 
-def rename(cluster,path,extension):
-    index = len([name for name in os.listdir(cluster) if (os.path.isfile(os.path.join(cluster,name)) and (name.endswith(extension)))])
+def rename(cluster, index, extension):
     new_name = os.path.normpath(cluster)
     new_name = str(os.path.basename(new_name))
     new_name = new_name.zfill(2) + "_" + str(index).zfill(4) + extension
     new_name = os.path.join(cluster,new_name)
-    os.rename(path,new_name)
+    return new_name
 def delet_files(path):
+    print("\n\n\n\n\n")
     while True:
         print("Deletar imagens de origem?")
         print("[S] Sim")
@@ -306,7 +311,7 @@ def Menu(path):
             elif(opt == 2):
                 print("Em qual database deseja adicionar?")
                 npath = input("R- ")
-                mov_files(npath)
+                mov_files(path, npath)
                 end = delet_files(path)
             elif(opt == 3):
                 return False
@@ -318,6 +323,7 @@ def Menu(path):
             if not (end):
                 return False
         except ValueError:
+            print("Aqui")
             print("Escolha um valor numerico.")
 def Webscrapping():
     url = insert_url()
@@ -333,7 +339,7 @@ def Webscrapping():
     return opt
 def Googlesearch():
     print("\nInsira um termo para ser usado para buscar imagens no Google.")
-    term = input("Termo-")
+    term = input("Termo- ")
     print("\nQuantas imagens devem ser buscadas?")
     qut = int(input("Quantidade- "))
     path = check_path()
@@ -361,13 +367,14 @@ def main():
     print("\n\n")
     print("Esse programa tem como objetivo coletar e baixar imagens de uma pagina da internet, que o usuario forneça o link, ou então")
     print("coletar e baixar n imagens do Google Imagens de um certo termo, o usuario tambem deve fornecer os termos e quantidades.")
-    print("\n\n")
     
     while True:
-        print("Deseja baixar as imagens de uma página ou de pesquisar no Google Imagens?\n")
+        print("\n\n\nSelecione uma operação?\n")
         print("[1] Baixar imagens de uma página.")
         print("[2] Pesquisar um termo no Google Imagens.")
-        print("[3] Finalizar o programa.")
+        print("[3] Comparar duas imagens.")
+        print("[4] Comparar uma imagem com uma database.")
+        print("[5] Finalizar o programa.")
         
 
         try:
@@ -377,6 +384,46 @@ def main():
             elif(opt == 2):
                 end = Googlesearch()
             elif(opt == 3):
+                print("\nInsira o caminho da primeira imagem.")
+                img1 = input("R- ")
+                print("\nInsira o caminho da segunda imagem.")
+                img2 = input("R- ")
+                pct = howSimilar(img1, img2)
+    
+                im1 = cv2.imread(img1)
+                im2 = cv2.imread(img2)
+                im2 = cv2.resize(im2,(im1.shape[1], im1.shape[0]))
+                vifpv = vifp(im1,im2)
+                uqiv = uqi(im1,im2)
+
+                img1 = os.path.normpath(os.path.basename(img1))
+                img2 = os.path.normpath(os.path.basename(img2))
+                print("A "+img1+" é",pct,"%"+" similar a "+img2)
+                print("Pelo VIFP elas tem uma semelhança de",vifpv,"(1 é o melhor).")
+                print("Pelo UQI elas tem uma semelhança de",uqiv,"(1 é o melhor).")
+                end = False
+            elif(opt == 4):
+                print("\nInsira o caminho da primeira imagem.")
+                img = input("R- ")
+                print("\nInsira o caminho da database.")
+                path = input("R- ")
+                pct, nome, pathr = moreSimilar(img, path)
+
+                im1 = cv2.imread(img)
+                im2 = cv2.imread(os.path.join(pathr,nome))
+                im2 = cv2.resize(im2,(im1.shape[1], im1.shape[0]))
+                vifpv = vifp(im1,im2)
+                uqiv = uqi(im1,im2)
+                vifpv = vifp(im1,im2)
+                uqiv = uqi(im1,im2)
+ 
+
+                img = os.path.normpath(os.path.basename(img))
+                print("A imagem mais similar a "+img+" é "+nome+" com ",pct,"%"+" de similaridade.")
+                print("Pelo VIFP elas tem uma semelhança de",vifpv,"(1 é o melhor).")
+                print("Pelo UQI elas tem uma semelhança de",uqiv,"(1 é o melhor).")
+                end = False
+            elif(opt == 5):
                 end = True
             else:
                 print("\nOpção invalida\n")
