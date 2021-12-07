@@ -183,6 +183,7 @@ def moreSimilar(file_name, clst_name):
                         titles.append(file)
                         pathes.append(sub.path)
                         all_similarities.append(howSimilar(img_path, img2comp))
+
     
     closest = max(all_similarities)
     count = 0
@@ -398,9 +399,12 @@ def main():
 
                 img1 = os.path.normpath(os.path.basename(img1))
                 img2 = os.path.normpath(os.path.basename(img2))
+                print("\n\n\n\n\n")
                 print("A "+img1+" é",pct,"%"+" similar a "+img2)
                 print("Pelo VIFP elas tem uma semelhança de",vifpv,"(1 é o melhor).")
                 print("Pelo UQI elas tem uma semelhança de",uqiv,"(1 é o melhor).")
+
+                sleep(3)
                 end = False
             elif(opt == 4):
                 print("\nInsira o caminho da primeira imagem.")
@@ -413,10 +417,7 @@ def main():
                 im2 = cv2.imread(os.path.join(pathr,nome))
                 im2 = cv2.resize(im2,(im1.shape[1], im1.shape[0]))
                 vifpv = vifp(im1,im2)
-                uqiv = uqi(im1,im2)
-                vifpv = vifp(im1,im2)
-                uqiv = uqi(im1,im2)
- 
+                uqiv = uqi(im1,im2) 
 
                 img = os.path.normpath(os.path.basename(img))
                 print("A imagem mais similar a "+img+" é "+nome+" com ",pct,"%"+" de similaridade.")
